@@ -1,13 +1,12 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const router = express.Router();
 const passport = require("passport");
 const FacebookTokenStrategy = require("passport-facebook-token");
 const GoogleTokenStrategy = require("passport-google-token").Strategy;
-
+const client = require("twilio")(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 const userModule = require("../models/queries");
+
 
 
 passport.use("facebookToken",new FacebookTokenStrategy({
@@ -56,8 +55,6 @@ passport.use("googleToken", new GoogleTokenStrategy({
    }
   }
 ));
-
-
 router.post('/googleauth',
   passport.authenticate('googleToken'),
   function (req, res) {
@@ -74,6 +71,34 @@ passport.deserializeUser((obj, cb) => {
 
 
 
+
+router.post("/twiliologin",(req,res)=>{
+    client.verify.services(process.env.TWILIO_SERVICE_ID)
+    .verifications.create({
+        to: req.body.number,
+        channel: req.body.channel
+    }).then((data)=>{
+        console.log(data);
+        res.status(200).send(data);
+    }).catch((err)=>{
+        console.log(err);
+        res.status(400).send(err);
+    });
+});
+
+router.post("/verify",(req,res)=>{
+    client.verify.services(process.env.TWILIO_SERVICE_ID)
+    .verificationChecks.create({
+        to: req.body.number,
+        code: req.body.code
+    }).then((data)=>{
+        console.log(data);
+        res.status(200).send(data);
+    }).catch((err)=>{
+        console.log(err);
+        res.status(400).send(err);
+    });
+});
 
 
 
